@@ -62,3 +62,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Build new server structure with mm-link parameters:
+# UPLINK = wired300
+# DOWNLINK = wired12
