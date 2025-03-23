@@ -1,4 +1,4 @@
-# LDOS - Yifan Ma's Joint Learning project
+# LDOS - Yifan Ma's Joint Learning Project
 
 ## Commands for running each server
 First, start **SEND**, **RECV**, and **COMP** inside `mm-delay` shells.
@@ -21,4 +21,3 @@ First, start **SEND**, **RECV**, and **COMP** inside `mm-delay` shells.
 `DOWNLINK = wired12`
 
 ## TODO
-- Setup servers to properly do the round trip communication timing
