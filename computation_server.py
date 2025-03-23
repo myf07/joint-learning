@@ -20,41 +20,39 @@ def main():
                         help="Host/IP of the communication server")
     parser.add_argument("--comm_port", type=int, default=6000,
                         help="Port of the communication server")
-    parser.add_argument("--num_jobs", type=int, default=3,
-                        help="Number of jobs to generate and send")
     parser.add_argument("--matrix_size", type=int, default=200,
                         help="Matrix dimension for NxN multiplication")
     args = parser.parse_args()
 
-    print(f"[COMPUTATION] Will compute & send {args.num_jobs} jobs, matrix_size={args.matrix_size}")
     print(f"[COMPUTATION] Connecting once to Communication at {args.comm_host}:{args.comm_port} ...")
-
-    # Single persistent connection
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((args.comm_host, args.comm_port))
+    comp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    comp_socket.connect((args.comm_host, args.comm_port))
     print("[COMPUTATION] Single connection established with Communication Server.")
 
-    time.sleep(5)
+    try:
+        while True:
+            # Continuously read jobs from the communication server
+            data = comp_socket.recv(65535)
+            if not data:
+                print("[COMPUTATION] Communication server closed connection. Exiting.")
+                break
 
-    for job_id in range(args.num_jobs):
-        # Record start time if you want end-to-end to include compute
-        start_time = time.time()
+            job = json.loads(data.decode("utf-8"))
+            job_id = job.get("job_id", -1)
+            start_time = job.get("start_time", None)
 
-        # CPU-intensive work
-        _ = perform_matrix_multiplication(args.matrix_size)
+            # Perform CPU-intensive work
+            _ = perform_matrix_multiplication(args.matrix_size)
 
-        job = {
-            "job_id": job_id,
-            "start_time": start_time,
-        }
+            # Now send the job back to the Communication Server
+            # so it can be forwarded to the Receiver
+            comp_socket.sendall(json.dumps(job).encode("utf-8"))
+            print(f"[COMPUTATION] Completed job {job_id} and sent it back.")
 
-        print(f"[COMPUTATION] Sending job {job_id}, start_time={start_time:.4f}")
-        s.sendall(json.dumps(job).encode("utf-8"))
-
-        time.sleep(1)  # optional pause between jobs
-
-    print("[COMPUTATION] All jobs sent. Closing the socket.")
-    s.close()
+    except KeyboardInterrupt:
+        print("\n[COMPUTATION] Ctrl+C caught, shutting down.")
+    finally:
+        comp_socket.close()
 
 if __name__ == "__main__":
     main()
