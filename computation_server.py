@@ -6,14 +6,13 @@ import numpy as np
 
 def perform_matrix_multiplication(n=200):
     """
-    Perform a random NxN matrix multiplication using NumPy,
-    simulating a CPU-intensive task.
+    Perform a random NxN matrix multiplication using numpy,
+    simulating a CPU-intensive task on the computation server.
     """
-    print(f"Matrix size: {n}")
     A = np.random.rand(n, n)
     B = np.random.rand(n, n)
     C = A @ B  # matrix multiply
-    return float(np.sum(C))  # Just return something to confirm the work was done
+    return float(np.sum(C))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -27,34 +26,35 @@ def main():
                         help="Matrix dimension for NxN multiplication")
     args = parser.parse_args()
 
-    print(f"[COMPUTATION] Will generate and send {args.num_jobs} jobs. Using matrix_size={args.matrix_size}")
+    print(f"[COMPUTATION] Will compute & send {args.num_jobs} jobs, matrix_size={args.matrix_size}")
+    print(f"[COMPUTATION] Connecting once to Communication at {args.comm_host}:{args.comm_port} ...")
+
+    # Single persistent connection
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((args.comm_host, args.comm_port))
+    print("[COMPUTATION] Single connection established with Communication Server.")
+
+    time.sleep(5)
 
     for job_id in range(args.num_jobs):
-        # 1) Record start time (for E2E measurement)
+        # Record start time if you want end-to-end to include compute
         start_time = time.time()
 
-        # 2) Perform CPU-intensive work
-        # _ = perform_matrix_multiplication(args.matrix_size)
+        # CPU-intensive work
+        _ = perform_matrix_multiplication(args.matrix_size)
 
-        # 3) Prepare job data
         job = {
             "job_id": job_id,
             "start_time": start_time,
         }
 
-        comp_finished_time = time.time()
-        print(f"Time to compute: {(comp_finished_time - start_time) * 1000} ms")
-        print(f"Computation finished time: {comp_finished_time}")
-
         print(f"[COMPUTATION] Sending job {job_id}, start_time={start_time:.4f}")
-        # 4) Send job to communication server
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((args.comm_host, args.comm_port))
-            s.sendall(json.dumps(job).encode("utf-8"))
+        s.sendall(json.dumps(job).encode("utf-8"))
 
         time.sleep(1)  # optional pause between jobs
 
-    print("[COMPUTATION] All jobs sent. Exiting.")
+    print("[COMPUTATION] All jobs sent. Closing the socket.")
+    s.close()
 
 if __name__ == "__main__":
     main()

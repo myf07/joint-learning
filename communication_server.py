@@ -3,12 +3,6 @@ import argparse
 import time
 import json
 
-def forward_to_receiver(job, receiver_host, receiver_port):
-    """
-    Connect to the receiver server (which is in the MahiMahi shell),
-    send the job, then close.
-    """
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--recv_host", default="0.0.0.0",
@@ -21,47 +15,44 @@ def main():
                         help="Port of the receiver server")
     args = parser.parse_args()
 
-    print(f"[COMMUNICATION] Listening on {args.recv_host}:{args.recv_port}")
-    print(f"[COMMUNICATION] Forwarding jobs to receiver at {args.forward_host}:{args.forward_port}")
-
+    print(f"[COMM] Listening on {args.recv_host}:{args.recv_port} for the computation server.")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((args.recv_host, args.recv_port))
-    server_socket.listen(5)
+    server_socket.listen(1)
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((args.forward_host, args.forward_port))
+    # Connect once to the receiver
+    print(f"[COMM] Connecting once to the Receiver at {args.forward_host}:{args.forward_port}...")
+    recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    recv_socket.connect((args.forward_host, args.forward_port))
+    print("[COMM] Single connection established with Receiver.")
+
+    # Accept once from the computation server
+    print("[COMM] Waiting for single TCP handshake with Computation Server...")
+    comp_conn, comp_addr = server_socket.accept()
+    print(f"[COMM] Single connection established with Computation Server at {comp_addr}")
 
     try:
         while True:
-            print("[COMMUNICATION] Waiting for job from computation server...")
-            conn, addr = server_socket.accept()
-            print(f"[COMMUNICATION] Connected by {addr}")
-
-            data = conn.recv(65535)
+            # Continuously read jobs from computation server
+            data = comp_conn.recv(65535)
             if not data:
-                conn.close()
-                continue
+                print("[COMM] Computation server closed the connection. Exiting loop.")
+                break
 
-            # One job at a time
             job = json.loads(data.decode("utf-8"))
             job_id = job.get('job_id')
-            print(f"[COMMUNICATION] Received job {job_id} with start_time={job.get('start_time')}")
-            recv_time = time.time()
-            print(f"Time to receive on communication: {(recv_time - job.get('start_time')) * 1000} ms")
-            print(f"Receive time: {recv_time}")
-            
-            # Forward the job (FIFO pass-through)
-            # forward_to_receiver('1', args.forward_host, args.forward_port)
-            s.sendall(json.dumps(job).encode("utf-8"))
-            print("[COMMUNICATION] Job forwarded to receiver.")
+            start_time = job.get('start_time', 0)
+            print(f"[COMM] Received job {job_id}, start_time={start_time}")
 
-            conn.close()
+            # Forward the job to the same receiver socket
+            recv_socket.sendall(json.dumps(job).encode("utf-8"))
 
     except KeyboardInterrupt:
-        print("\n[COMMUNICATION] Shutting down.")
+        print("\n[COMM] Ctrl+C caught. Shutting down.")
     finally:
+        comp_conn.close()
+        recv_socket.close()
         server_socket.close()
-        s.close()
 
 if __name__ == "__main__":
     main()
