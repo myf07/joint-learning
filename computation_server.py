@@ -29,6 +29,12 @@ def main():
     comp_socket.connect((args.comm_host, args.comm_port))
     print("[COMPUTATION] Single connection established with Communication Server.")
 
+    # Warm-up: Perform an initial matrix multiplication to pre-initialize resources
+    # This gets rid of a 10ms delay that's added by the computation server
+    print("[COMPUTATION] Performing warm-up matrix multiplication...")
+    _ = perform_matrix_multiplication(args.matrix_size)
+    print("[COMPUTATION] Warm-up completed.")
+
     try:
         while True:
             # Continuously read jobs from the communication server
