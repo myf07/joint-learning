@@ -36,35 +36,36 @@ mm-link "$COMM_UPLINK_TRACE" "$COMM_DOWNLINK_TRACE" -- bash -c '
   echo "Comm Server Outer IP: $OUTER_IP"; echo "$OUTER_IP" > "'$OUTER_IP_FILE'"
 
   echo "Waiting for Computation Server Outer IP file ($COMP_IP_FILE)..."
-  while [ ! -f "'$COMP_IP_FILE'" ]; do sleep 1; done
-  COMP_HOST=$(cat "'$COMP_IP_FILE'")
-  export COMP_HOST # Export COMP_HOST for the inner script
-  echo "Found Computation Server Outer IP: $COMP_HOST"
+  # while [ ! -f "'$COMP_IP_FILE'" ]; do sleep 1; done
+  # COMP_HOST=$(cat "'$COMP_IP_FILE'")
+  # export COMP_HOST # Export COMP_HOST for the inner script
+  # echo "Found Computation Server Outer IP: $COMP_HOST"
 
   # Create inner script
   cat << EOF > "'$INNER_SCRIPT_FILE'"
-#!/bin/bash
-# Script for Inner Shell (mm-delay)
-export PATH=\$PATH
+  #!/bin/bash
+  # Script for Inner Shell (mm-delay)
+  export PATH=\$PATH
 
-# Redefine function locally for robustness
-get_mahimahi_ip() {
-  # Use single quotes for awk script
-  ip -4 addr show scope global | grep -Eo "inet ([0-9]{1,3}\.){3}[0-9]{1,3}" | awk '\''{print \$2}'\'' | head -n 1
-}
+  # Redefine function locally for robustness
+  get_mahimahi_ip() {
+    # Use single quotes for awk script
+    ip -4 addr show scope global | grep -Eo "inet ([0-9]{1,3}\.){3}[0-9]{1,3}" | awk '\''{print \$2}'\'' | head -n 1
+  }
 
-INNER_IP=\$(get_mahimahi_ip)
-if [ -z "\$INNER_IP" ]; then echo "Error: Failed to get Comm Inner IP."; exit 1; fi
-echo "Comm Server Inner IP: \$INNER_IP"; echo "\$INNER_IP" > "\$INNER_IP_FILE"
+  INNER_IP=\$(get_mahimahi_ip)
+  if [ -z "\$INNER_IP" ]; then echo "Error: Failed to get Comm Inner IP."; exit 1; fi
+  echo "Comm Server Inner IP: \$INNER_IP"; echo "\$INNER_IP" > "\$INNER_IP_FILE"
 
-echo "Starting Python server, listens on \$SENDER_PORT & \$COMP_PORT, connects to R:\$RECEIVER_HOST:\$RECEIVER_PORT C:\$COMP_HOST:\$COMP_PORT..."
-python3 "\$PYTHON_SCRIPT" --sender_port="\$SENDER_PORT" --comp_port="\$COMP_PORT" --receiver_host="\$RECEIVER_HOST" --receiver_port="\$RECEIVER_PORT" --comp_host="\$COMP_HOST" &
-PYTHON_PID=\$!
-echo "Comm Server Python server PID: \$PYTHON_PID"
-wait \$PYTHON_PID
-echo "Comm Server Python server exited."
-rm -f "\$INNER_IP_FILE"
-EOF
+  echo "Starting Python server, listens on \$SENDER_PORT & \$COMP_PORT, connects to R:\$RECEIVER_HOST:\$RECEIVER_PORT C:\$COMP_HOST:\$COMP_PORT..."
+  python3 "\$PYTHON_SCRIPT" --sender_port="\$SENDER_PORT" --comp_port="\$COMP_PORT" --receiver_host="\$RECEIVER_HOST" --receiver_port="\$RECEIVER_PORT" --comp_host="\$COMP_HOST" &
+  PYTHON_PID=\$!
+  echo "Comm Server Python server PID: \$PYTHON_PID"
+  wait \$PYTHON_PID
+  echo "Comm Server Python server exited."
+  rm -f "\$INNER_IP_FILE"
+  EOF
+
   chmod +x "'$INNER_SCRIPT_FILE'"
 
   echo "Starting inner shell by executing $INNER_SCRIPT_FILE ..."

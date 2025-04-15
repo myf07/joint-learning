@@ -21,3 +21,13 @@ First, start **SEND**, **RECV**, and **COMP** inside `mm-delay` shells.
 `DOWNLINK = wired12`
 
 ## TODO
+
+- Debug the scripts
+- Check end-to-end time
+- Create single script with tmux
+- Check end-to-end time
+- Create random data to buffer packet size
+- Check end-to-end time
+- Add job scheduling on computation server
+- Check end-to-end time
+- Add packet scheduling for communication server

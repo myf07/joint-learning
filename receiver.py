@@ -12,7 +12,7 @@ def main():
     print(f"[RECEIVER] Starting on {args.host}:{args.port}")
 
     receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    receiver_socket.bind((args.host, args.port))
+    receiver_socket.bind(('0.0.0.0', args.port))
     receiver_socket.listen(1)
 
     print("[RECEIVER] Waiting for the communication server to connect...")

@@ -18,7 +18,7 @@ def main():
                         help="Port for the Computation server")
 
     # 3) Connect once to the Receiver
-    parser.add_argument("--receiver_host", default="127.0.0.1",
+    parser.add_argument("--receiver_host", default="10.0.0.6",
                         help="Host/IP of the receiver server")
     parser.add_argument("--receiver_port", type=int, default=7000,
                         help="Port of the receiver server")
