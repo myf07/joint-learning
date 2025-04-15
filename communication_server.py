@@ -32,7 +32,7 @@ def main():
 
     print(f"[COMM] 2) Listening on {args.comp_host}:{args.comp_port} for the Computation Server.")
     comp_listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    comp_listen_socket.bind((args.comp_host, args.comp_port))
+    comp_listen_socket.bind(('0.0.0.0', args.comp_port))
     comp_listen_socket.listen(1)
 
     print(f"[COMM] 3) Connecting once to Receiver at {args.receiver_host}:{args.receiver_port}...")
